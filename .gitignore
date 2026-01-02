@@ -1,16 +1,16 @@
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Django
+db.sqlite3
+media/
 
 # Virtual environment
 venv/
 
 # Environment variables
 .env
-
-# Django
-db.sqlite3
-media/
 
 # OS
 .DS_Store
