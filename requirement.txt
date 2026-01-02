@@ -1,6 +1,0 @@
-Django>=5.2.9,<6
-djangorestframework>=3.20.0
-django-crispy-forms>=1.14.0
-crispy-bootstrap5>=0.7
-pytz>=2023.3
-sqlparse>=0.4.4
