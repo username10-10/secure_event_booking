@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load tz %}
 {% block title %}Audit Logs{% endblock %}
 
 {% block content %}
@@ -24,7 +25,7 @@
                     {% endif %}
                 </td>
                 <td style="padding: 8px;">{{ log.action }}</td>
-                <td style="padding: 8px;">{{ log.timestamp|date:"M d, Y H:i" }}</td>
+                <td style="padding: 8px;">{{ log.timestamp|localtime|date:"M d, Y H:i" }}</td>
             </tr>
             {% empty %}
             <tr>

@@ -72,10 +72,32 @@ def cancel_booking(request, booking_id):
         messages.error(request, "You cannot cancel this booking.")
         return redirect('event_list')
 
+    # Save details BEFORE delete
     event = booking.event
+    booked_user = booking.user
+
+    # Restore seat
     event.available_seats += 1
     event.save()
+
+    # ✅ AUDIT LOG (All cancellations)
+    from audit.models import AuditLog
+    if request.user.is_staff:
+        # Admin cancels someone else's booking
+        AuditLog.objects.create(
+            user=request.user,
+            action=f"Admin cancelled booking for user '{booked_user.username}' on event '{event.title}'"
+        )
+    else:
+        # User cancels their own booking
+        AuditLog.objects.create(
+            user=request.user,
+            action=f"User '{request.user.username}' canceled their own booking on event '{event.title}'"
+        )
+
+    # Delete the booking after logging
     booking.delete()
+
     messages.success(request, f"Booking for '{event.title}' canceled.")
 
     # Redirect based on role
@@ -83,6 +105,8 @@ def cancel_booking(request, booking_id):
         return redirect('all_bookings')
     else:
         return redirect('my_bookings')
+
+
 
 @login_required
 def my_bookings(request):

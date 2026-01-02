@@ -109,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kuala_Lumpur'
 
 USE_I18N = True
 
@@ -130,9 +130,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Redirect non-logged-in users to this URL
 LOGIN_URL = '/users/login/'
 
-# Optional: redirect after login
-LOGIN_URL = '/users/login/'   # redirect here if not logged in
-LOGIN_REDIRECT_URL = '/events/'  # after login, redirect to event list
-LOGOUT_REDIRECT_URL = '/users/login/'  # after logout
+# Redirect after login/logout
+LOGIN_REDIRECT_URL = '/'  # root URL will handle role redirect
+LOGOUT_REDIRECT_URL = '/users/login/'  # after logout, go to login page
+
 # Audit log settings
 AUDIT_LOG_ENABLED = True
