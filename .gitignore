@@ -1,17 +1,26 @@
-# Python
+# Python cache
 __pycache__/
-*.py[cod]
-
-# Django
-db.sqlite3
-media/
+*.pyc
+*.pyo
+*.pyd
 
 # Virtual environment
 venv/
+ENV/
+env/
 
-# Environment variables
-.env
+# Database
+*.sqlite3
 
-# OS
-.DS_Store
-Thumbs.db
+# Django stuff
+*.log
+*.pot
+*.py[cod]
+*.swp
+*.DS_Store
+
+# VS Code
+.vscode/
+
+# IDE
+.idea/
