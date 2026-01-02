@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Book Event: {{ event.title }}</h1>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Confirm Booking</button>
+</form>
+{% endblock %}
