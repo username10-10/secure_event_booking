@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from .forms import UserRegisterForm
 from booking.models import Booking  # Import Booking model
+from audit.models import AuditLog
 
 # ==========================
 # Home redirect based on role
@@ -37,6 +38,8 @@ def user_register(request):
 # ==========================
 # User Login
 # ==========================
+
+
 def user_login(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -44,13 +47,29 @@ def user_login(request):
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
+
             if user is not None:
                 login(request, user)
+
+                # ✅ Log successful login (optional but good)
+                AuditLog.objects.create(
+                    user=user,
+                    action="User logged in successfully"
+                )
+
                 return redirect('event_list')
+
+        # ❌ Failed login attempt
+        AuditLog.objects.create(
+            user=None,
+            action="Failed login attempt"
+        )
         messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
+
     return render(request, 'users/login.html', {'form': form})
+
 
 # ==========================
 # User Logout

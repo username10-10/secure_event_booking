@@ -1,14 +1,16 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from .models import AuditLog
 
 @login_required
 def audit_logs(request):
-    """Admins view audit logs."""
     if not request.user.is_staff:
-        messages.error(request, "Admins only.")
-        return redirect('event_list')
+        AuditLog.objects.create(
+            user=request.user,
+            action="Suspicious activity: non-admin attempted to access audit logs"
+        )
+        raise PermissionDenied
 
     logs = AuditLog.objects.all().order_by('-timestamp')
     return render(request, 'audit/audit_logs.html', {'logs': logs})

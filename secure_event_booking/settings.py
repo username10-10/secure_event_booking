@@ -24,9 +24,7 @@ SECRET_KEY = 'django-insecure-dh77oudfsigul6q%y6trd^x8i&o*o4xp^^p#+qd8x-%m%un_yi
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 # Application definition
 
@@ -136,3 +134,29 @@ LOGOUT_REDIRECT_URL = '/users/login/'  # after logout, go to login page
 
 # Audit log settings
 AUDIT_LOG_ENABLED = True
+
+# ==========================
+# Security enhancements
+# ==========================
+# Make cookies HTTP only
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+
+# Expire cookies when browser closes
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Secure only in production
+SESSION_COOKIE_SECURE = False  # True in production with HTTPS
+CSRF_COOKIE_SECURE = False     # True in production
+
+# SameSite to Lax (prevents CSRF in most cases)
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# HTTPS redirect off for development
+SECURE_SSL_REDIRECT = False
+
+# HSTS off for development
+SECURE_HSTS_SECONDS = 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False

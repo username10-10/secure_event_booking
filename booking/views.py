@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from .models import Event, Booking
 from .forms import EventForm
-from django.utils import timezone
+from audit.models import AuditLog  # ✅ central audit log
+
 
 # ==========================
 # Event Views
@@ -15,12 +17,16 @@ def event_list(request):
     events = Event.objects.all()
     return render(request, 'booking/event_list.html', {'events': events})
 
+
 @login_required
 def create_event(request):
-    """Allow admins to create a new event."""
     if not request.user.is_staff:
-        messages.error(request, "Admins only.")
-        return redirect('event_list')
+        # 🚨 Suspicious activity: non-admin trying to create event
+        AuditLog.objects.create(
+            user=request.user,
+            action="Suspicious activity: non-admin attempted to create event"
+        )
+        raise PermissionDenied
 
     if request.method == 'POST':
         form = EventForm(request.POST)
@@ -28,11 +34,20 @@ def create_event(request):
             event = form.save(commit=False)
             event.created_by = request.user
             event.save()
+
+            # ✅ Admin action logged
+            AuditLog.objects.create(
+                user=request.user,
+                action=f"Admin created event '{event.title}'"
+            )
+
             messages.success(request, "Event created successfully.")
             return redirect('event_list')
     else:
         form = EventForm()
+
     return render(request, 'booking/event_create.html', {'form': form})
+
 
 # ==========================
 # Booking Views
@@ -40,7 +55,6 @@ def create_event(request):
 
 @login_required
 def book_event(request, event_id):
-    """Book an event. Admins redirected to all bookings; users to their bookings."""
     event = get_object_or_404(Event, id=event_id)
 
     if event.available_seats <= 0:
@@ -54,25 +68,32 @@ def book_event(request, event_id):
     Booking.objects.create(user=request.user, event=event)
     event.available_seats -= 1
     event.save()
+
+    # ✅ Booking action logged
+    AuditLog.objects.create(
+        user=request.user,
+        action=f"User booked event '{event.title}'"
+    )
+
     messages.success(request, f"🎉 You booked '{event.title}' successfully!")
 
-    # Redirect based on role
     if request.user.is_staff:
         return redirect('all_bookings')
-    else:
-        return redirect('my_bookings')
+    return redirect('my_bookings')
+
 
 @login_required
 def cancel_booking(request, booking_id):
-    """Cancel a booking. Admins can cancel any; users only their own."""
     booking = get_object_or_404(Booking, id=booking_id)
 
-    # Permission check
+    # 🚨 IDOR + RBAC protection with logging
     if not request.user.is_staff and booking.user != request.user:
-        messages.error(request, "You cannot cancel this booking.")
-        return redirect('event_list')
+        AuditLog.objects.create(
+            user=request.user,
+            action="Suspicious activity: unauthorized booking cancellation attempt"
+        )
+        raise PermissionDenied
 
-    # Save details BEFORE delete
     event = booking.event
     booked_user = booking.user
 
@@ -80,39 +101,32 @@ def cancel_booking(request, booking_id):
     event.available_seats += 1
     event.save()
 
-    # ✅ AUDIT LOG (All cancellations)
-    from audit.models import AuditLog
+    # ✅ Audit logging for cancellation
     if request.user.is_staff:
-        # Admin cancels someone else's booking
         AuditLog.objects.create(
             user=request.user,
             action=f"Admin cancelled booking for user '{booked_user.username}' on event '{event.title}'"
         )
     else:
-        # User cancels their own booking
         AuditLog.objects.create(
             user=request.user,
-            action=f"User '{request.user.username}' canceled their own booking on event '{event.title}'"
+            action=f"User cancelled own booking on event '{event.title}'"
         )
 
-    # Delete the booking after logging
     booking.delete()
 
     messages.success(request, f"Booking for '{event.title}' canceled.")
 
-    # Redirect based on role
     if request.user.is_staff:
         return redirect('all_bookings')
-    else:
-        return redirect('my_bookings')
-
+    return redirect('my_bookings')
 
 
 @login_required
 def my_bookings(request):
-    # Use 'created_at' instead of 'booked_at'
     bookings = Booking.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'booking/my_bookings.html', {'bookings': bookings})
+
 
 # ==========================
 # Admin Only Views
@@ -121,26 +135,12 @@ def my_bookings(request):
 @login_required
 def all_bookings(request):
     if not request.user.is_staff:
-        messages.error(request, "Admins only.")
-        return redirect('event_list')
+        # 🚨 Suspicious activity: non-admin accessing admin bookings
+        AuditLog.objects.create(
+            user=request.user,
+            action="Suspicious activity: non-admin attempted to access all bookings"
+        )
+        raise PermissionDenied
 
-    # Use 'created_at' instead of 'booked_at'
     bookings = Booking.objects.all().order_by('-created_at')
     return render(request, 'booking/all_bookings.html', {'bookings': bookings})
-
-
-# ==========================
-# Audit Log View (Optional)
-# ==========================
-
-@login_required
-def audit_logs(request):
-    """Admins view audit logs."""
-    if not request.user.is_staff:
-        messages.error(request, "Admins only.")
-        return redirect('event_list')
-
-    # Replace with your AuditLog model if you have one
-    from audit.models import AuditLog
-    logs = AuditLog.objects.all().order_by('-timestamp')
-    return render(request, 'audit/audit_logs.html', {'logs': logs})
