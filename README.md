@@ -38,3 +38,6 @@ Pillow: Image processing for user profiles.
 Bandit: Static Analysis Security Testing (SAST).
 
 ## Screenshots of System
+
+![WhatsApp Image 2026-01-03 at 1 30 17 AM](https://github.com/user-attachments/assets/87836928-9cc0-4c1a-b878-443a4e5a03a9)
+
