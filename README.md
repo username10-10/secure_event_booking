@@ -80,6 +80,7 @@ Bandit: Static Analysis Security Testing (SAST).
 ### User Section 
 
 1. User registration
+
 ![WhatsApp Image 2026-01-03 at 1 30 45 AM (1)](https://github.com/user-attachments/assets/39340c22-9904-4add-a16a-a57fbdb21564)
 
 2. Login page
