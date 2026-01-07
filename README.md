@@ -39,7 +39,7 @@ Bandit: Static Analysis Security Testing (SAST).
 
 ## Screenshots of System
 
-# Admin Section
+### Admin Section
 
 1. Create New Event interface on the Admin page
 ![WhatsApp Image 2026-01-03 at 1 30 17 AM](https://github.com/user-attachments/assets/87836928-9cc0-4c1a-b878-443a4e5a03a9)
@@ -77,7 +77,7 @@ Bandit: Static Analysis Security Testing (SAST).
 12. Audit log that only admin can access
 <img width="1600" height="490" alt="image" src="https://github.com/user-attachments/assets/1416ea07-cda3-444a-9db8-51d04b2b7799" />
 
-# User Section 
+### User Section 
 
 1. User registration
 ![WhatsApp Image 2026-01-03 at 1 30 45 AM (1)](https://github.com/user-attachments/assets/39340c22-9904-4add-a16a-a57fbdb21564)
