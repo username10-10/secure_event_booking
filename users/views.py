@@ -1,27 +1,28 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
-from .forms import UserRegisterForm
-from booking.models import Booking  # Import Booking model
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User
+from booking.models import Booking
 from audit.models import AuditLog
+from .forms import UserRegisterForm
 
-# ==========================
-# Home redirect based on role
-# ==========================
+
+def is_business_admin(user):
+    return user.groups.filter(name='BUSINESS_ADMIN').exists()
+
+
 @login_required
 def home_redirect(request):
     if request.user.is_staff:
-        # Admins go to Django admin
         return redirect('/admin/')
+    elif is_business_admin(request.user):
+        return redirect('business_dashboard')
     else:
-        # Normal users go to event list
         return redirect('event_list')
 
-# ==========================
-# User Registration
-# ==========================
+
 def user_register(request):
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
@@ -35,57 +36,41 @@ def user_register(request):
         form = UserRegisterForm()
     return render(request, 'users/register.html', {'form': form})
 
-# ==========================
-# User Login
-# ==========================
-
 
 def user_login(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-
-            if user is not None:
-                login(request, user)
-
-                # ✅ Log successful login (optional but good)
-                AuditLog.objects.create(
-                    user=user,
-                    action="User logged in successfully"
-                )
-
-                return redirect('event_list')
-
-        # ❌ Failed login attempt
-        AuditLog.objects.create(
-            user=None,
-            action="Failed login attempt"
-        )
-        messages.error(request, "Invalid username or password.")
+            user = form.get_user()
+            login(request, user)
+            AuditLog.objects.create(user=user, action="User logged in")
+            return redirect('home')
+        else:
+            messages.error(request, "Invalid username or password.")
     else:
         form = AuthenticationForm()
-
     return render(request, 'users/login.html', {'form': form})
 
 
-# ==========================
-# User Logout
-# ==========================
 @login_required
 def user_logout(request):
+    AuditLog.objects.create(user=request.user, action="User logged out")
     logout(request)
     return redirect('login')
 
-# ==========================
-# User Profile Page
-# ==========================
+
 @login_required
 def profile(request):
-    """
-    Displays the logged-in user's profile information and their bookings.
-    """
-    user_bookings = Booking.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'users/profile.html', {'user_bookings': user_bookings})
+    bookings = Booking.objects.filter(user=request.user)
+    return render(request, 'users/profile.html', {'user_bookings': bookings})
+
+
+@login_required
+@user_passes_test(is_business_admin)
+def business_admin_dashboard(request):
+    users = User.objects.all()
+    bookings = Booking.objects.all()
+    return render(request, 'business/dashboard.html', {
+        'users': users,
+        'bookings': bookings
+    })
