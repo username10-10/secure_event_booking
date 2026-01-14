@@ -17,7 +17,7 @@ Logging and Audit: Utilizing a Custom Security Audit Module to keep track of all
 
 ## Installation Steps
 1. Clone the repoitory: git clone https://github.com/username10-10/secure_event_booking
-2. Create a virtual environment: python --m venv venv
+2. Create a virtual environment: python -m venv venv
 3. Activate the environment:
    Windows: venv\Scripts\activate
    Mac/Linux: source venv/bin/activate
