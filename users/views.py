@@ -1,9 +1,10 @@
-from django.contrib.auth import login, logout
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import logout
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
+from django.urls import reverse
+
 from booking.models import Booking
 from audit.models import AuditLog
 from .forms import UserRegisterForm
@@ -31,32 +32,23 @@ def user_register(request):
             user.set_password(form.cleaned_data['password'])
             user.save()
             messages.success(request, "Account created successfully.")
-            return redirect('login')
+            # Redirect to 2FA login
+            return redirect(reverse("two_factor:login"))
     else:
         form = UserRegisterForm()
     return render(request, 'users/register.html', {'form': form})
 
 
 def user_login(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            AuditLog.objects.create(user=user, action="User logged in")
-            return redirect('home')
-        else:
-            messages.error(request, "Invalid username or password.")
-    else:
-        form = AuthenticationForm()
-    return render(request, 'users/login.html', {'form': form})
+    # Legacy login route -> redirect to django-two-factor-auth login
+    return redirect(reverse("two_factor:login"))
 
 
 @login_required
 def user_logout(request):
     AuditLog.objects.create(user=request.user, action="User logged out")
     logout(request)
-    return redirect('login')
+    return redirect(reverse("two_factor:login"))
 
 
 @login_required

@@ -121,7 +121,7 @@
                 <button class="btn btn-danger">Logout</button>
             </form>
         {% else %}
-            <a href="{% url 'login' %}">Login</a>
+            <a href="{% url 'two_factor:login' %}">Login</a>
             <a href="{% url 'register' %}">Register</a>
         {% endif %}
     </nav>

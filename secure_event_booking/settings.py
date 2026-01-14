@@ -11,15 +11,14 @@ import os
 from dotenv import load_dotenv
 
 # Load .env file
-load_dotenv()  # reads variables from .env into os.environ
+load_dotenv()
 
-# Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # =========================
 # Security
 # =========================
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")  # fallback only for dev
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
 DEBUG = os.getenv("DEBUG", "True") == "True"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
 
@@ -33,20 +32,42 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Required for django-two-factor-auth
+    'django.contrib.sites',
+
+    # OTP / 2FA
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
+
+    'two_factor',
+    'two_factor.plugins.phonenumber',  # Fix B: requires phonenumbers
+
     # Project apps
-    'users',  # Make sure this appears only once
+    'users',
     'booking',
     'audit',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+
+    # Must be after AuthenticationMiddleware
+    'django_otp.middleware.OTPMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Enforce 2FA across the site
+    'users.middleware.Enforce2FAMiddleware',
 ]
 
 ROOT_URLCONF = 'secure_event_booking.urls'
@@ -59,7 +80,7 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
-                'django.template.context_processors.request',
+                'django.template.context_processors.request',  # required by two_factor templates
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -83,18 +104,10 @@ DATABASES = {
 # Password validation
 # =========================
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
 # =========================
@@ -111,16 +124,13 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# =========================
-# Default primary key field type
-# =========================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # =========================
-# Login & Logout
+# Login & Logout (2FA)
 # =========================
-LOGIN_URL = '/users/login/'
-LOGOUT_REDIRECT_URL = '/users/login/'
+LOGIN_URL = '/account/login/'
+LOGOUT_REDIRECT_URL = '/account/login/'
 LOGIN_REDIRECT_URL = '/'  # home_redirect handles role redirect
 
 # =========================
@@ -134,10 +144,12 @@ AUDIT_LOG_ENABLED = True
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 SESSION_COOKIE_SECURE = False  # True in production with HTTPS
 CSRF_COOKIE_SECURE = False     # True in production
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
+
 SECURE_SSL_REDIRECT = False
 SECURE_HSTS_SECONDS = 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False

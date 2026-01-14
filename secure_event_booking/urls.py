@@ -3,12 +3,17 @@ from django.urls import path, include
 from users.views import home_redirect
 from secure_event_booking.views import test_400, test_500
 
+from two_factor.urls import urlpatterns as tf_urls  # ✅ correct include
+
 handler400 = 'secure_event_booking.views.custom_400'
 handler403 = 'secure_event_booking.views.custom_403'
 handler404 = 'secure_event_booking.views.custom_404'
 handler500 = 'secure_event_booking.views.custom_500'
 
 urlpatterns = [
+    # ✅ two-factor auth URLs -> /account/login/, /account/two_factor/setup/, etc.
+    path('', include(tf_urls)),
+
     path('admin/', admin.site.urls),
 
     # Home redirect
